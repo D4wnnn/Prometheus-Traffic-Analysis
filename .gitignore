@@ -2,4 +2,4 @@ __pycache__
 *.ckpt
 *.log
 *.png
-/finetuned_best
+finetuned_best_**.pth
