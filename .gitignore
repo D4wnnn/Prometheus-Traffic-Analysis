@@ -1,6 +1,5 @@
-*.pth
 __pycache__
-*.json
 *.ckpt
 *.log
 *.png
+finetuned_best/
