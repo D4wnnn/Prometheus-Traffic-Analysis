@@ -67,9 +67,8 @@ def process_pcap(pcap_path):
 def main():
     # --- Configuration ---
     dataset_dirs = [
-        Path("/storage/lc_data/processed_datasets/pretrain/CICIDS2017-processed"),
-        Path("/storage/lc_data/processed_datasets/pretrain/CIC_IOT_Dataset2022-processed"),
-        Path("/storage/lc_data/processed_datasets/pretrain/MAWI-processed"),
+        Path("/path/to/CIC_IOT_Dataset2022-processed"),
+        Path("/path/to/MAWI-processed"),
     ]
     output_h5_file = Path("./t48-pretrain_data_all-big.h5")
 

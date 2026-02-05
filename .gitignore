@@ -1,7 +1,5 @@
 *.pth
 __pycache__
-*.h5
-*.pth
 *.json
 *.ckpt
 *.log
