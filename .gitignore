@@ -3,3 +3,4 @@ __pycache__
 *.log
 *.png
 outputs/finetuned_best/*
+outputs/eval_results/*
