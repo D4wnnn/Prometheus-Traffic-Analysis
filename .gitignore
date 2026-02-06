@@ -3,4 +3,6 @@ __pycache__
 *.log
 *.png
 outputs/finetuned_best/*
+!outputs/finetuned_best/.gitkeep
 outputs/eval_results/*
+!outputs/eval_results/.gitkeep
