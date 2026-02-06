@@ -208,6 +208,5 @@ class EncryptedTrafficClassifier(nn.Module):
         Returns:
             attention_weights: Attention weights.
         """
-        # TODO: Modify PacketTransformerLayer to return attention weights.
-        # This requires updating the forward function signature.
+        # Attention weights would require PacketTransformerLayer to return them; not used in current pipeline.
         pass

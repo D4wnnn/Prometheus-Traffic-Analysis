@@ -163,7 +163,7 @@ def evaluate_heavy_only(args):
     print(f"F1 Score:           {f1:.2f}%")
     print(f"{'-'*60}")
     
-    # ------------------ Modification Start: Calculate and print confusion matrix ------------------
+    # Confusion matrix
     print("Detailed Confusion Matrix Analysis:")
     
     # Calculate confusion matrix

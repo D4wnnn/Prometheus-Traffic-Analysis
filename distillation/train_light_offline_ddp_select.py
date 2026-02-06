@@ -34,9 +34,6 @@ from distillation_utils import DistillationLoss
 from train_light_offline_ddp import cleanup, train_epoch_distill, setup
 
 
-# === Modification 2: Removed local cleanup(), directly using the imported version ===
-
-
 def build_teacher(num_classes, teacher_path, device, rank, max_packets, max_bytes):
     """Constructs the Teacher model (using full view)."""
     teacher = EncryptedTrafficClassifier(
@@ -212,8 +209,7 @@ def main(rank, world_size, args):
         
         if rank == 0:
             print(f"\nEpoch {epoch + 1}/{args.epochs}")
-        
-        # === Modification 4: Use imported train_epoch_distill ===
+
         train_loss, train_acc = train_epoch_distill(
             student, teacher, train_loader, criterion, optimizer, device, rank
         )

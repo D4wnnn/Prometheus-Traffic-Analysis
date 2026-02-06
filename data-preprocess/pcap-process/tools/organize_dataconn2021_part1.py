@@ -1,6 +1,6 @@
 import os
 import shutil
-from tqdm import tqdm  # If tqdm is not installed, you can remove tqdm() and use range() directly
+from tqdm import tqdm
 
 def organize_dataset():
     # ================= Configuration Paths =================

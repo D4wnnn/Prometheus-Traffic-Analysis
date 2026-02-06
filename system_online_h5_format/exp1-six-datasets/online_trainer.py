@@ -156,27 +156,14 @@ def online_trainer(args):
             
             student_logits = model(light_inputs)
             
-            # --- Critical Setup 5: Logit Health Checks ---
-            if step_counter % 50 == 0:
-                print(f"[DEBUG] Step {step_counter}:")
-                print(f"  Teacher logits: mean={teacher_logits.mean():.4f}, std={teacher_logits.std():.4f}, max={teacher_logits.max():.4f}")
-                print(f"  Student logits: mean={student_logits.mean():.4f}, std={student_logits.std():.4f}, max={student_logits.max():.4f}")
-            
             loss, ce_loss, kl_loss = criterion(student_logits, teacher_logits, labels)
-            
-            # --- Critical Setup 6: Detect Abnormal Loss ---
+
             if torch.isnan(loss) or loss.item() > 100:
                 print(f"[WARNING] Abnormal loss detected: {loss.item():.4f}, skipping this batch")
                 continue
-            
+
             loss.backward()
-            
-            # --- Critical Setup 7: Gradient Clipping ---
-            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            
-            if step_counter % 50 == 0:
-                print(f"  Loss: {loss.item():.4f} (CE: {ce_loss.item():.4f}, KL: {kl_loss.item():.4f})")
-                print(f"  Gradient norm: {grad_norm:.4f}")
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             
             optimizer.step()
             

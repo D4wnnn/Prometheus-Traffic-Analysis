@@ -330,7 +330,7 @@ def cleanup():
 
 def load_pretrained_weights(model, pretrain_path, rank):
     """
-    Load pre-trained weights (Fixed shape mismatch issues).
+    Load pre-trained backbone weights; parameters with shape mismatch are dropped.
     """
     if rank == 0:
         print(f"Loading pretrained weights from {pretrain_path}...")
@@ -340,7 +340,7 @@ def load_pretrained_weights(model, pretrain_path, rank):
     # Get state_dict from checkpoint
     pretrained_state_dict = checkpoint['backbone_state_dict']
     
-    # 1. Remove the classification head (Original logic)
+    # Remove classifier head keys from pretrained state dict
     keys_to_remove = []
     for key in pretrained_state_dict.keys():
         if key.startswith('classifier.'):
@@ -352,8 +352,7 @@ def load_pretrained_weights(model, pretrain_path, rank):
     for key in keys_to_remove:
         del pretrained_state_dict[key]
 
-    # ================= Fix Logic Start =================
-    # 2. Detect and drop parameters with shape mismatch (e.g., when use_adaptive_gating is toggled)
+    # Drop parameters with shape mismatch when config differs from checkpoint
     model_state_dict = model.state_dict()
     keys_mismatch = []
 
@@ -371,8 +370,7 @@ def load_pretrained_weights(model, pretrain_path, rank):
     
     if rank == 0 and len(keys_mismatch) > 0:
         print(f"Dropped {len(keys_mismatch)} layers due to shape mismatch (likely W_O layer changes).")
-    # ================= Fix Logic End =================
-    
+
     # Load backbone weights
     msg = model.load_state_dict(pretrained_state_dict, strict=False)
     

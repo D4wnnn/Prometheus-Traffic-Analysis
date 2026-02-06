@@ -59,14 +59,11 @@ def evaluate_light_only(args):
     model = LightTrafficClassifier(num_classes=num_classes, d_model=64).to(device)
     checkpoint = torch.load(args.light_path, map_location=device)
     
-    # === Fix Start ===
-    # Check if checkpoint contains 'model_state_dict' key
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         state_dict = checkpoint['model_state_dict']
     else:
         state_dict = checkpoint
-        
-    # Remove 'module.' prefix if present due to DDP training
+    # Strip 'module.' prefix from DDP-saved checkpoints
     new_state_dict = {}
     for k, v in state_dict.items():
         if k.startswith('module.'):
@@ -75,8 +72,7 @@ def evaluate_light_only(args):
             new_state_dict[k] = v
             
     model.load_state_dict(new_state_dict)
-    # === Fix End ===
-    
+
     model.eval()
     
     print("✓ Light Model loaded successfully\n")
