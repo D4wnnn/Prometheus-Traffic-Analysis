@@ -9,7 +9,6 @@ from scapy.all import rdpcap, IP, TCP, UDP
 import re
 
 from feature_extractors import extract_bytes_nlp_view, extract_sequence_nlp_view, extract_stats_view
-import debugpy
 
 # --- Configuration Parameters ---
 # Byte Modality (NLP view)

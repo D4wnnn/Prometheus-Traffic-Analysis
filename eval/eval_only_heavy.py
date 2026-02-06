@@ -183,8 +183,10 @@ def evaluate_heavy_only(args):
         df_cm.to_csv(csv_filename)
         print(f"\n✓ Confusion matrix saved to {csv_filename}")
     else:
-        print(f"Warning: Class names count ({len(class_names)}) does not match confusion matrix shape ({cm.shape[0]}). Skipping detailed print.")
-        print("Raw CM:\n", cm)
+        print(f"Warning: Class names count ({len(class_names)}) does not match confusion matrix shape ({cm.shape[0]}). Saving raw matrix to CSV only.")
+        csv_filename = args.save_result.replace('.json', '_cm.csv')
+        pd.DataFrame(cm).to_csv(csv_filename)
+        print(f"✓ Raw confusion matrix saved to {csv_filename}")
 
     print(f"{'-'*60}")
     print(f"Latency (per batch):")

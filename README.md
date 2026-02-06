@@ -321,7 +321,7 @@ The experiment folder contains:
 
 ### Running system experiments
 
-1. Ensure Heavy and Light checkpoints and global selectors exist (Heavy fine-tuning + scripts 4 and 5).
+1. Ensure Heavy and Light checkpoints and global selectors exist.
 2. In the experiment folder `exp1-six-datasets`, set paths in `run_experiments.py`: `PATH_PREFIX`, `PRETRAIN_CHECKPOINT`, dataset paths (e.g. `heavy_path`, `light_path`, `selector_path` from `get_dataset_config`).
 3. Run:
 

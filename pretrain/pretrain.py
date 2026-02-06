@@ -16,21 +16,22 @@ import argparse
 from pathlib import Path
 from tqdm import tqdm
 import json
-import debugpy
 from pretrain_dataset import PretrainDataset, collate_fn
 from pretrain_model import PretrainWrapper
 
 
 def setup_debugger(rank):
-    """Enable debugger on rank 0 only"""
-    if rank == 0:
-        try:
-            debugpy.listen(("localhost", 9505))
-            print("Waiting for debugger attach on rank 0")
-            debugpy.wait_for_client()
-            print("Debugger attached to rank 0")
-        except Exception as e:
-            print(f"Debugger setup failed: {e}")
+    """Enable debugger on rank 0 only (only when --debug is passed)."""
+    if rank != 0:
+        return
+    try:
+        import debugpy
+        debugpy.listen(("localhost", 9505))
+        print("Waiting for debugger attach on rank 0")
+        debugpy.wait_for_client()
+        print("Debugger attached to rank 0")
+    except Exception as e:
+        print(f"Debugger setup failed: {e}")
 
 
 def setup(rank, world_size):
@@ -257,6 +258,8 @@ def cleanup_old_checkpoints(save_dir, prefix, max_keep):
 
 def main(rank, world_size, args):
     """Main training function"""
+    if getattr(args, 'debug', False):
+        setup_debugger(rank)
     setup(rank, world_size)
     device = torch.device(f'cuda:{rank}')
     
@@ -472,7 +475,9 @@ if __name__ == '__main__':
     # GPU arguments
     parser.add_argument('--gpus', type=str, default='0,1,2,3',
                         help='GPU indices to use, comma-separated')
-    
+    parser.add_argument('--debug', action='store_true',
+                        help='Enable debugpy listener on rank 0 (for IDE attach)')
+
     args = parser.parse_args()
     
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus

@@ -9,7 +9,7 @@ import sys
 PATH_PREFIX = "../../" 
 
 # Common Parameters
-PRETRAIN_CHECKPOINT = os.path.join(PATH_PREFIX, "outputs/pretrain_checkpoints/10*300/10x300_pretrain_epoch_7.pth")
+PRETRAIN_CHECKPOINT = os.path.join(PATH_PREFIX, "outputs/pretrain_checkpoints/10x300/10x300_pretrain_epoch_7.pth")
 CONF_THRESHOLD = "0.8"
 GPU_FRONTEND = "0"
 GPU_BACKEND = "1"
