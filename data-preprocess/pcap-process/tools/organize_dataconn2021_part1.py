@@ -5,7 +5,7 @@ from tqdm import tqdm  # 如果没有安装tqdm，可以将下面的 tqdm() 去�
 def organize_dataset():
     # ================= 配置路径 =================
     # 基础路径 (根据你提供的上下文设置)
-    base_path = "/raid/lc/datasets/initial_datasets/finetune/DataCon2021/part1"
+    base_path = "path/to/your/dataset"  # 请修改为实际路径
     
     # 原始 pcap 文件所在的目录
     source_dir = os.path.join(base_path, "real_data")

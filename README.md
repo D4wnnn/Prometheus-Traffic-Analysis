@@ -186,10 +186,6 @@ Fine-tuning data is **labeled**; the H5 includes the same features plus `labels`
   python preprocess_finetune_data.py \
       --input  /path/to/finetune/CSTNET \
       --output ./cstnet_h5
-
-  python preprocess_finetune_data.py \
-      --input  /path/to/finetune/DataCon2021-processed/part1 \
-      --output ./datacon2021_part1_h5
   ```
   For multiple datasets, use `2-get_finetune_data.sh` and set `BASE_DIR` to your dataset root.
 
@@ -239,22 +235,23 @@ Fine-tunes the pre-trained backbone on labeled H5 data for downstream classifica
 
 ```bash
 python ../finetune/finetune.py \
-    --data_dir      /path/to/cstnet_h5 \
-    --pretrain_path ../outputs/pretrain_checkpoints/5x320/5x320_pretrain_epoch_7.pth \
-    --config_path   ../outputs/pretrain_checkpoints/5x320/backbone_config.py \
+    --data_dir      /path/to/fintune_data_h5 \
+    --pretrain_path ../outputs/pretrain_checkpoints/10x300/10x300_pretrain.pth \
+    --config_path   ../outputs/pretrain_checkpoints/10x300/backbone_config.py \
     --batch_size    16 \
     --epochs        20 \
     --lr            1e-3 \
     --warmup_epochs 10 \
     --freeze_mode   none \
     --save_path     ../outputs/finetuned_best/cstnet/finetuned_best_cstnet.pth \
-    --gpus          0,1,2,3
+    --gpus          0,1,2,3,4,5,6,7
 ```
 
 **Batch fine-tuning (multiple datasets):** Set `DATA_BASE_DIR`, `PRETRAIN_CHECKPOINTS`, and `config_path` in the script, then:
 
 ```bash
-bash scripts/2-run_finetune.sh
+cd scripts
+bash ./2-run_finetune.sh
 ```
 
 The script runs fine-tuning on CSTNET, DataCon2021-Part1, AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305, and Mix. Data directories are expected as `$DATA_BASE_DIR/{cstnet,datacon2021_part1,...}_h5`.
@@ -336,24 +333,3 @@ Each experiment folder contains:
    ```
 
 Experiments typically start backend and trainer as background processes, then run the frontend client in **pure** (Light only) or **system** (Light + Heavy + online trainer) mode and write results under `results/`.
-
----
-
-## Pipeline Summary
-
-1. **Environment:** `pip install -r requirements.txt`; set up CUDA/PyTorch as needed.
-2. **Data:**  
-   - Raw PCAP → `data-preprocess/pcap-process` (flow-level split).  
-   - Optional split → `process_aes/split_dataset.py`.  
-   - Pre-training: `pacp2h5/preprocess_pretrain_data.py` → one unlabeled H5.  
-   - Fine-tuning / Light: `pacp2h5/preprocess_finetune_data.py` → one H5 directory per dataset.
-3. **Heavy model:**  
-   - Pre-train: `pretrain/pretrain.py` → checkpoints + `backbone_config.py`.  
-   - Fine-tune: `finetune/finetune.py` → Heavy (teacher) checkpoints per dataset.
-4. **Light model:**  
-   - Selection: `scripts/4-run_selection.sh` → global selector `.npz` per dataset.  
-   - Distillation: `scripts/5-distillation_select.sh` → Light checkpoints per dataset.
-5. **Collaborative system:**  
-   - Run experiments in `system_online_h5_format/exp*` (e.g. `run_experiments.py`) using the same Heavy/Light/selector paths.
-
-For evaluation-only scripts (Heavy-only, Light-only, system, robustness, etc.), see `eval/` and `scripts/` (e.g. `3-eval-only-heavy.sh`, `6-eval-only-light.sh`). For distillation utilities and alternate training scripts, see `distillation/`.
