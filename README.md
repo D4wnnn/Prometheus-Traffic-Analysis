@@ -132,7 +132,7 @@ python main.py \
 | `--train-ratio` / `--val-ratio` / `--test-ratio` | Split ratios (optional) |
 | `--filter-rule` | Packet filter rule (optional, e.g. TCP/UDP only) |
 
-For batch processing multiple datasets, edit paths and commands in `run_all.sh`.
+
 
 ### 2. Train/Val/Test Split (data-preprocess/process_aes)
 
@@ -222,7 +222,8 @@ python ../pretrain/pretrain.py \
 Or use the provided script (edit `--data_file` to your H5 path first):
 
 ```bash
-bash scripts/1-run_pretrain.sh
+cd scripts
+bash ./1-run_pretrain.sh
 ```
 
 **Key arguments:** `--data_file`, `--save_dir`, `--batch_size`, `--epochs`, `--lr`, `--mask_prob`, `--resume` / `--resume_path`, `--gpus`.
@@ -309,12 +310,9 @@ The **collaborative system** deploys Light and Heavy together: the **frontend** 
 
 | Directory | Purpose |
 |-----------|---------|
-| `exp1-online-learning` | Online learning experiments (e.g. source→target drift, number of drift epochs). |
-| `exp2-six-datasets` | Six-dataset evaluation: **Pure Light** baseline vs **System** (Light + Heavy + Online Trainer). |
-| `exp3-hyperparameter` | Hyperparameter experiments for the system. |
-| `exp4-embedding_save` | Experiments with embedding save/analysis. |
+| `exp1-six-datasets` | Six-dataset evaluation: **Pure Light** baseline vs **System** (Light + Heavy + Online Trainer). |
 
-Each experiment folder contains:
+The experiment folder contains:
 
 - **`backend_server.py`** — Heavy model server (loads fine-tuned Heavy, runs inference, can send samples to trainer).
 - **`frontend_client.py`** — Client that runs Light (with global selector), optionally calls Heavy when below `conf_threshold`, and drives evaluation.
@@ -324,11 +322,11 @@ Each experiment folder contains:
 ### Running system experiments
 
 1. Ensure Heavy and Light checkpoints and global selectors exist (Heavy fine-tuning + scripts 4 and 5).
-2. In the desired experiment folder (e.g. `exp2-six-datasets`), set paths in `run_experiments.py`: `PATH_PREFIX`, `PRETRAIN_CHECKPOINT`, dataset paths (e.g. `heavy_path`, `light_path`, `selector_path` from `get_dataset_config`).
+2. In the experiment folder `exp1-six-datasets`, set paths in `run_experiments.py`: `PATH_PREFIX`, `PRETRAIN_CHECKPOINT`, dataset paths (e.g. `heavy_path`, `light_path`, `selector_path` from `get_dataset_config`).
 3. Run:
 
    ```bash
-   cd system_online_h5_format/exp2-six-datasets
+   cd system_online_h5_format/exp1-six-datasets
    python run_experiments.py
    ```
 
