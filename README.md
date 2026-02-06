@@ -24,7 +24,6 @@ The codebase is organized into three parts:
   - [Global Selection](#global-selection)
   - [Distillation](#distillation)
 - [Collaborative System](#collaborative-system)
-- [Pipeline Summary](#pipeline-summary)
 
 ---
 
