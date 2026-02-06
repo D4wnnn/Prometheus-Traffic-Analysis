@@ -15,4 +15,4 @@ backbone_config = {
 
 data_max_packets = 10
 data_max_bytes = 300
-output_dir_suffix = "5x300"
+output_dir_suffix = "10x300"

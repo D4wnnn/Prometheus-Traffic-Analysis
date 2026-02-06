@@ -1,6 +1,6 @@
 """
-Light-Only Baseline 评估脚本
-只使用 Light Model 进行推理，测试各项指标
+Light-Only Baseline Evaluation Script (with selection)
+Performs inference using only the Light Model and evaluates various performance metrics.
 """
 
 import torch
@@ -22,11 +22,11 @@ from finetune.finetune import TrafficDataset, collate_fn, set_seed
 
 
 def evaluate_light_only(args):
-    """Light-Only评估主函数"""
+    """Main function for Light-Only evaluation"""
     set_seed(42)
     device = torch.device(f'cuda:{args.gpu}')
     
-    # 加载数据
+    # Load data
     with open(os.path.join(args.data_dir, "label_mapping.json"), 'r') as f:
         num_classes = len(json.load(f))
     
@@ -34,9 +34,9 @@ def evaluate_light_only(args):
     test_dataset = TrafficDataset(
         test_h5,
         augmentation=False,
-        max_packets=args.teacher_packets,  # 先加载teacher尺寸
+        max_packets=args.teacher_packets,  # First load teacher-sized dimensions
         max_bytes=args.teacher_bytes,
-        global_selection_path=args.global_selector  # 然后用selector截取
+        global_selection_path=args.global_selector  # Then apply selection via selector
     )
     test_loader = DataLoader(
         test_dataset, 
@@ -55,18 +55,18 @@ def evaluate_light_only(args):
     print(f"Device: {device}")
     print(f"{'='*60}\n")
     
-    # 加载Light Model
+    # Load Light Model
     model = LightTrafficClassifier(num_classes=num_classes, d_model=64).to(device)
     checkpoint = torch.load(args.light_path, map_location=device)
     
-    # === 修复开始 ===
-    # 检查checkpoint是否包含 'model_state_dict' 键
+    # === Fix Start ===
+    # Check if checkpoint contains 'model_state_dict' key
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         state_dict = checkpoint['model_state_dict']
     else:
         state_dict = checkpoint
         
-    # 如果是因为DDP训练导致键名带有 'module.' 前缀，需要去除
+    # Remove 'module.' prefix if present due to DDP training
     new_state_dict = {}
     for k, v in state_dict.items():
         if k.startswith('module.'):
@@ -75,13 +75,13 @@ def evaluate_light_only(args):
             new_state_dict[k] = v
             
     model.load_state_dict(new_state_dict)
-    # === 修复结束 ===
+    # === Fix End ===
     
     model.eval()
     
     print("✓ Light Model loaded successfully\n")
     
-    # 统计变量
+    # Statistical variables
     all_preds = []
     all_labels = []
     all_confidences = []
@@ -95,22 +95,22 @@ def evaluate_light_only(args):
         for batch in tqdm(test_loader, desc='Light-Only Inference'):
             batch_start = time.time()
             
-            # 准备数据
+            # Prepare data
             batch_data = {k: v.to(device) if isinstance(v, torch.Tensor) else v 
                           for k, v in batch.items() if k != 'label'}
             labels = batch['label'].to(device)
             
-            # 推理
+            # Inference
             logits = model(batch_data)
             probs = F.softmax(logits, dim=1)
             conf, preds = probs.max(1)
             
-            # 记录结果
+            # Record results
             all_preds.append(preds.cpu().numpy())
             all_labels.append(labels.cpu().numpy())
             all_confidences.append(conf.cpu().numpy())
             
-            # 记录延迟
+            # Record latency
             batch_end = time.time()
             batch_latencies.append(batch_end - batch_start)
             total_samples += labels.size(0)
@@ -118,12 +118,12 @@ def evaluate_light_only(args):
     end_time = time.time()
     total_time = end_time - start_time
     
-    # 聚合预测结果
+    # Aggregate predictions
     all_preds = np.concatenate(all_preds)
     all_labels = np.concatenate(all_labels)
     all_confidences = np.concatenate(all_confidences)
     
-    # 计算指标
+    # Calculate metrics
     accuracy = accuracy_score(all_labels, all_preds) * 100
     precision, recall, f1, _ = precision_recall_fscore_support(
         all_labels, all_preds, average='macro', zero_division=0
@@ -134,42 +134,42 @@ def evaluate_light_only(args):
     
     throughput = total_samples / total_time
     
-    # 置信度统计
+    # Confidence statistics
     conf_mean = np.mean(all_confidences)
     conf_std = np.std(all_confidences)
     
-    # 延迟统计
+    # Latency statistics
     latencies_ms = np.array(batch_latencies) * 1000
     latency_p50 = np.percentile(latencies_ms, 50)
     latency_p95 = np.percentile(latencies_ms, 95)
     latency_p99 = np.percentile(latencies_ms, 99)
     latency_mean = np.mean(latencies_ms)
     
-    # 打印结果
+    # Print results
     print(f"\n{'='*60}")
     print(f"Light-Only Evaluation Results")
     print(f"{'='*60}")
-    print(f"Total Time:        {total_time:.2f}s")
-    print(f"Total Samples:     {total_samples}")
-    print(f"Throughput:        {throughput:.2f} packets/s")
+    print(f"Total Time:         {total_time:.2f}s")
+    print(f"Total Samples:      {total_samples}")
+    print(f"Throughput:         {throughput:.2f} packets/s")
     print(f"{'-'*60}")
-    print(f"Accuracy:          {accuracy:.2f}%")
-    print(f"Precision:         {precision:.2f}%")
-    print(f"Recall:            {recall:.2f}%")
-    print(f"F1 Score:          {f1:.2f}%")
+    print(f"Accuracy:           {accuracy:.2f}%")
+    print(f"Precision:          {precision:.2f}%")
+    print(f"Recall:             {recall:.2f}%")
+    print(f"F1 Score:           {f1:.2f}%")
     print(f"{'-'*60}")
     print(f"Confidence:")
-    print(f"  Mean:            {conf_mean:.4f}")
-    print(f"  Std:             {conf_std:.4f}")
+    print(f"  Mean:             {conf_mean:.4f}")
+    print(f"  Std:              {conf_std:.4f}")
     print(f"{'-'*60}")
     print(f"Latency (per batch):")
-    print(f"  Mean:            {latency_mean:.2f} ms")
-    print(f"  P50:             {latency_p50:.2f} ms")
-    print(f"  P95:             {latency_p95:.2f} ms")
-    print(f"  P99:             {latency_p99:.2f} ms")
+    print(f"  Mean:             {latency_mean:.2f} ms")
+    print(f"  P50:              {latency_p50:.2f} ms")
+    print(f"  P95:              {latency_p95:.2f} ms")
+    print(f"  P99:              {latency_p99:.2f} ms")
     print(f"{'='*60}\n")
     
-    # 保存结果
+    # Save results
     results = {
         'mode': 'Light-Only',
         'config': {
@@ -185,7 +185,7 @@ def evaluate_light_only(args):
             'precision': float(precision),
             'recall': float(recall),
             'f1_score': float(f1),
-            'heavy_calls': 0,  # Light-Only不调用Heavy
+            'heavy_calls': 0,  # Light-Only does not call Heavy
             'heavy_call_rate': 0.0,
             'confidence_mean': float(conf_mean),
             'confidence_std': float(conf_std),

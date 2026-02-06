@@ -202,7 +202,6 @@ class MultiModalMultiHeadAttention(nn.Module):
             # Compute gate weights (per sample)
             gates = self.head_gating(global_repr)  # (B, num_heads)
             
-            # [TRICK 1] Kill weights for ablated heads
             if self.disabled_head_indices:
                 gate_mask = torch.ones_like(gates)
                 for h_idx in self.disabled_head_indices:
@@ -227,9 +226,6 @@ class MultiModalMultiHeadAttention(nn.Module):
         return output
 
     def reset_ablated_heads_weights(self):
-        """
-        Trick 1: Reset Q/K/V projection weights for ablated heads to eliminate pre-training memory.
-        """
         if not self.disabled_head_indices:
             return
 

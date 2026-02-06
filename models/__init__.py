@@ -1,7 +1,3 @@
-"""
-模型模块初始化文件
-"""
-
 from .byte_encoder import ByteEmbedding, ByteLevelTransformer, PacketBytesEncoder
 from .packet_attention import (
     MultiModalMultiHeadAttention,

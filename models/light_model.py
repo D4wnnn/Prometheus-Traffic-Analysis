@@ -113,7 +113,7 @@ class LightTrafficClassifier(nn.Module):
         bytes_nlp = batch_data['bytes_nlp'] # (B, N, L)
         seq_nlp = batch_data['seq_nlp']     # (B, N, 3)
         
-        # ===== Fix: Log Transform =====
+        # ===== Log Transform =====
         # Compress raw large values (0~1500) into range (0~7.5) to prevent linear layer saturation.
         size = torch.log1p(seq_nlp[:, :, 0].float())
         direction = seq_nlp[:, :, 1].float()

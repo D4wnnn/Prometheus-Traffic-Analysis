@@ -1,24 +1,24 @@
 import os
 import shutil
-from tqdm import tqdm  # 如果没有安装tqdm，可以将下面的 tqdm() 去掉，直接用 range
+from tqdm import tqdm  # If tqdm is not installed, you can remove tqdm() and use range() directly
 
 def organize_dataset():
-    # ================= 配置路径 =================
-    # 基础路径 (根据你提供的上下文设置)
-    base_path = "path/to/your/dataset"  # 请修改为实际路径
+    # ================= Configuration Paths =================
+    # Base path (set according to your environment)
+    base_path = "path/to/your/dataset"  # Please modify to the actual path
     
-    # 原始 pcap 文件所在的目录
+    # Directory where original pcap files are located
     source_dir = os.path.join(base_path, "real_data")
     
-    # 标签文件路径
+    # Label file path
     label_file_path = os.path.join(base_path, "part1_label.txt")
     
-    # 输出目录 (整理后的数据存放位置)
+    # Output directory (where organized data will be stored)
     output_dir = os.path.join(base_path, "organized_real_data")
-    # ===========================================
+    # =======================================================
 
-    # 1. 读取标签文件
-    print(f"正在读取标签文件: {label_file_path} ...")
+    # 1. Read label file
+    print(f"Reading label file: {label_file_path} ...")
     file_label_map = {}
     try:
         with open(label_file_path, 'r') as f:
@@ -29,47 +29,47 @@ def organize_dataset():
                     label = parts[1]
                     file_label_map[filename] = label
     except FileNotFoundError:
-        print(f"错误: 找不到标签文件 {label_file_path}")
+        print(f"Error: Label file not found at {label_file_path}")
         return
 
-    print(f"共找到 {len(file_label_map)} 个样本映射关系。")
+    print(f"Found {len(file_label_map)} sample mapping relations.")
 
-    # 2. 开始整理
+    # 2. Start organizing
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print(f"创建输出目录: {output_dir}")
+        print(f"Created output directory: {output_dir}")
 
     success_count = 0
     missing_count = 0
 
-    # 使用 tqdm 显示进度条
-    print("开始复制并整理文件...")
+    # Use tqdm to display progress bar
+    print("Starting to copy and organize files...")
     for filename, label in tqdm(file_label_map.items()):
         src_path = os.path.join(source_dir, filename)
         
-        # 目标文件夹路径 (一级目录是 label)
+        # Target folder path (first-level directory is the label)
         dst_folder = os.path.join(output_dir, label)
         dst_path = os.path.join(dst_folder, filename)
 
-        # 检查源文件是否存在
+        # Check if source file exists
         if os.path.exists(src_path):
-            # 如果目标 label 文件夹不存在，则创建
+            # Create target label folder if it doesn't exist
             if not os.path.exists(dst_folder):
                 os.makedirs(dst_folder)
             
-            # 复制文件 (使用 copy2 保留文件元数据)
+            # Copy file (using copy2 to preserve metadata)
             shutil.copy2(src_path, dst_path)
             success_count += 1
         else:
-            # print(f"警告: 源文件 {filename} 未在 {source_dir} 中找到")
+            # print(f"Warning: Source file {filename} not found in {source_dir}")
             missing_count += 1
 
     print("-" * 30)
-    print("整理完成！")
-    print(f"成功整理: {success_count} 个文件")
+    print("Organization complete!")
+    print(f"Successfully organized: {success_count} files")
     if missing_count > 0:
-        print(f"缺失文件: {missing_count} 个 (在标签列表中但目录下不存在)")
-    print(f"新数据集保存在: {output_dir}")
+        print(f"Missing files: {missing_count} (In label list but not found in directory)")
+    print(f"New dataset saved at: {output_dir}")
 
 if __name__ == "__main__":
     organize_dataset()

@@ -1,6 +1,6 @@
 """
 eval_with_gating_analysis.py
-带门控权重分析的评估脚本
+Evaluation script with gating weight analysis.
 """
 
 import torch
@@ -25,8 +25,8 @@ from finetune.finetune import TrafficDataset, collate_fn, set_seed
 
 class GatingWeightCollector:
     """
-    门控权重收集器
-    通过 hook 机制收集每一层的 AdaptiveHeadGating 输出
+    Gating weight collector.
+    Collects AdaptiveHeadGating outputs for each layer using the PyTorch hook mechanism.
     """
     def __init__(self, model):
         self.model = model
@@ -35,17 +35,17 @@ class GatingWeightCollector:
         self._register_hooks()
     
     def _register_hooks(self):
-        """注册 forward hook 到所有 AdaptiveHeadGating 模块"""
-        # 遍历 packet_encoder 的所有层
+        """Registers forward hooks to all AdaptiveHeadGating modules."""
+        # Iterate through all layers in packet_encoder
         for layer_idx, layer in enumerate(self.model.packet_encoder.layers):
-            # 获取 attention 模块中的 head_gating
+            # Access head_gating within the attention module
             if hasattr(layer.attention, 'head_gating'):
                 gating_module = layer.attention.head_gating
                 
-                # 创建闭包来捕获 layer_idx
+                # Create a closure to capture the current layer_idx
                 def make_hook(idx):
                     def hook(module, input, output):
-                        # output 是 gates: (batch_size, num_heads)
+                        # output shape: (batch_size, num_heads)
                         self.gating_weights[idx].append(output.detach().cpu())
                     return hook
                 
@@ -54,18 +54,18 @@ class GatingWeightCollector:
                 print(f"✓ Hook registered for layer {layer_idx}")
     
     def clear(self):
-        """清空收集的权重"""
+        """Clears all collected weights."""
         self.gating_weights = defaultdict(list)
     
     def remove_hooks(self):
-        """移除所有 hooks"""
+        """Removes all registered hooks."""
         for hook in self.hooks:
             hook.remove()
         self.hooks = []
     
     def get_all_weights(self):
         """
-        获取所有收集的权重
+        Retrieves all collected weights.
         
         Returns:
             dict: {layer_idx: tensor of shape (num_samples, num_heads)}
@@ -73,17 +73,17 @@ class GatingWeightCollector:
         result = {}
         for layer_idx, weight_list in self.gating_weights.items():
             if weight_list:
-                # 拼接所有 batch 的权重
+                # Concatenate weights from all batches
                 result[layer_idx] = torch.cat(weight_list, dim=0)
         return result
 
 
 def evaluate_with_gating_analysis(args):
-    """带门控权重分析的评估函数"""
+    """Evaluation function with gating weight analysis."""
     set_seed(42)
     device = torch.device(f'cuda:{args.gpu}')
     
-    # 加载类别名称
+    # Load class labels
     label_map_path = os.path.join(args.data_dir, "label_mapping.json")
     with open(label_map_path, 'r') as f:
         label_map = json.load(f)
@@ -96,7 +96,7 @@ def evaluate_with_gating_analysis(args):
     num_classes = len(class_names)
     print(f"Loaded {num_classes} classes: {class_names}")
     
-    # 加载测试数据
+    # Load test dataset
     test_h5 = os.path.join(args.data_dir, "test_data.h5")
     test_dataset = TrafficDataset(test_h5, augmentation=False, max_packets=10, max_bytes=300, use_stats=False)
     test_loader = DataLoader(
@@ -114,7 +114,7 @@ def evaluate_with_gating_analysis(args):
     print(f"Test samples: {len(test_dataset)}")
     print(f"{'='*60}\n")
     
-    # 加载模型
+    # Initialize model
     model = EncryptedTrafficClassifier(
         num_classes=num_classes,
         d_byte=128, d_packet=260, byte_layers=3, packet_layers=4, num_heads=5,
@@ -122,19 +122,21 @@ def evaluate_with_gating_analysis(args):
         use_stats=False, use_adaptive_gating=True
     ).to(device)
     
+    # Load checkpoint
     checkpoint = torch.load(args.heavy_path, map_location=device)
     state_dict = checkpoint['model_state_dict'] if 'model_state_dict' in checkpoint else checkpoint
+    # Remove 'module.' prefix if saved with DataParallel
     new_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
     model.load_state_dict(new_state_dict, strict=True)
     model.eval()
     
     print("✓ Model loaded successfully")
     
-    # 创建门控权重收集器
+    # Initialize gating weight collector
     collector = GatingWeightCollector(model)
     print(f"✓ Gating weight collector initialized\n")
     
-    # 推理并收集数据
+    # Inference and data collection
     all_preds = []
     all_labels = []
     
@@ -146,24 +148,24 @@ def evaluate_with_gating_analysis(args):
                           for k, v in batch.items() if k != 'label'}
             labels = batch['label'].to(device)
             
-            # 前向传播（hook 会自动收集门控权重）
+            # Forward pass (hooks will automatically capture gating weights)
             logits = model(batch_data)
             _, preds = logits.max(1)
             
             all_preds.append(preds.cpu().numpy())
             all_labels.append(labels.cpu().numpy())
     
-    # 聚合结果
+    # Aggregate results
     all_preds = np.concatenate(all_preds)
     all_labels = np.concatenate(all_labels)
     
-    # 获取所有门控权重
+    # Retrieve all collected gating weights
     gating_weights = collector.get_all_weights()
     
-    # 移除 hooks
+    # Cleanup: Remove hooks
     collector.remove_hooks()
     
-    # 计算分类指标
+    # Calculate classification metrics
     accuracy = accuracy_score(all_labels, all_preds) * 100
     precision, recall, f1, _ = precision_recall_fscore_support(
         all_labels, all_preds, average='macro', zero_division=0
@@ -178,7 +180,7 @@ def evaluate_with_gating_analysis(args):
     print(f"F1 Score:  {f1*100:.2f}%")
     print(f"{'='*60}\n")
     
-    # 保存门控权重数据
+    # Save gating weight analysis data
     save_data = {
         'gating_weights': {layer_idx: weights.numpy() for layer_idx, weights in gating_weights.items()},
         'labels': all_labels,
@@ -198,7 +200,7 @@ def evaluate_with_gating_analysis(args):
     np.savez(args.save_gating_data, **save_data)
     print(f"✓ Gating weights saved to {args.save_gating_data}")
     
-    # 打印门控权重统计
+    # Print gating weight statistics
     print(f"\n{'='*60}")
     print(f"Gating Weights Statistics")
     print(f"{'='*60}")

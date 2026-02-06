@@ -90,7 +90,7 @@ def plot_single_layer_heatmap(layer_idx, weights, head_names, sample_indices, sa
     # X-axis: Real Sample Index
     ax.set_xlabel("Sample Index", fontsize=25, fontname='Times New Roman')
     
-    # Fix: Directly use passed sample_indices as labels to display real IDs
+    # Directly use passed sample_indices as labels to display real IDs
     ax.set_xticklabels(sample_indices, fontsize=25, fontname='Times New Roman')
 
     # 6. Save
