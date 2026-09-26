@@ -330,3 +330,9 @@ The experiment folder contains:
    ```
 
 Experiments typically start backend and trainer as background processes, then run the frontend client in **pure** (Light only) or **system** (Light + Heavy + online trainer) mode and write results under `results/`.
+
+---
+
+## Acknowledgments
+
+We sincerely thank [Prof. Zhuochen Fan](https://pkufzc.github.io/) and [Dr. Dong Wen](https://scholar.google.com/citations?user=2m7WsuwAAAAJ) for their invaluable guidance and support throughout this project.
